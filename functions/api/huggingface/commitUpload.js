@@ -22,7 +22,7 @@ export async function onRequestPost(context) {
         }
 
         const body = await request.json();
-        const { fullId, filePath, sha256, fileSize, fileName, channelName, multipartParts } = body;
+        const { fullId, filePath, sha256, fileSize, fileName, fileType, channelName, multipartParts } = body;
 
         if (!fullId || !filePath || !sha256 || !fileSize) {
             return new Response(JSON.stringify({
@@ -86,9 +86,11 @@ export async function onRequestPost(context) {
         // 构建 metadata
         const metadata = {
             FileName: fileName || fullId,
+            FileType: fileType || null,
             Channel: "HuggingFace",
             ChannelName: hfChannel.name || "HuggingFace_env",
             FileSize: (fileSize / 1024 / 1024).toFixed(2),
+            FileSizeBytes: fileSize,
             HfRepo: hfChannel.repo,
             HfFilePath: filePath,
             HfToken: hfChannel.token,
@@ -112,8 +114,6 @@ export async function onRequestPost(context) {
         await db.put(fullId, "", { metadata });
 
         // 结束上传（更新索引等）
-        // 构造 url 对象用于 endUpload
-        const url = new URL(request.url);
         const uploadContext = {
             env,
             waitUntil,
